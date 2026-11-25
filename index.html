@@ -1061,10 +1061,8 @@
        · 이미 홈 화면 앱으로 실행 중이 아님 (display-mode: standalone / navigator.standalone)
        · 카카오톡 인앱 브라우저가 아님 (기본 브라우저로 넘어간 뒤에만 안내)
        · 닫기로 저장한 기록이 없음 (localStorage)
-       · 모바일 기기이거나, 브라우저가 설치를 지원(beforeinstallprompt)함
      안드로이드 Chrome 이 설치 이벤트를 주면 그 프롬프트를 그대로 띄우고,
-     이벤트가 없는 환경(아이폰·Safari 등)은 두 단계 안내 시트로 넘긴다. */
-  const LS_A2HS = "miso_a2hs_hidden_v1";
+     이벤트가 없는 환경(아이폰·Safari 등)은 두 단계 안내 시트로 넘긴다. */  const LS_A2HS = "miso_a2hs_hidden_v1";
   const A2HS_DELAY = 700;
   let deferredPrompt = null;
   let a2hsTimer = null;
@@ -1081,13 +1079,12 @@
   function isKakao() { return /kakaotalk/i.test(ua()); }
   function isIOS() { return /iphone|ipad|ipod/i.test(ua()) || (/Macintosh/.test(ua()) && navigator.maxTouchPoints > 1); }
   function isAndroid() { return /android/i.test(ua()); }
-  function isMobile() { return isIOS() || isAndroid() || /mobile|samsungbrowser|opera mini/i.test(ua()); }
   function a2hsDismissed() {
     try { return localStorage.getItem(LS_A2HS) === "1"; } catch (e) { return false; }
   }
   function a2hsAllowed() {
-    if (isStandalone() || isKakao() || a2hsDismissed()) return false;
-    return isMobile() || !!deferredPrompt;
+    // 세 가지 제외 조건만 통과하면 보여 준다 (모바일이든 데스크톱 웹이든)
+    return !isStandalone() && !isKakao() && !a2hsDismissed();
   }
 
   function a2hsPaint() {
@@ -1097,9 +1094,12 @@
     } else if (isIOS()) {
       el.a2hsGoLabel.textContent = "추가 방법";
       el.a2hsSub.textContent = "Safari 공유 버튼에서 두 번만 누르면 돼요.";
-    } else {
+    } else if (isAndroid()) {
       el.a2hsGoLabel.textContent = "추가 방법";
       el.a2hsSub.textContent = "브라우저 메뉴에서 두 번만 누르면 돼요.";
+    } else {
+      el.a2hsGoLabel.textContent = "추가 방법";
+      el.a2hsSub.textContent = "브라우저 메뉴에서 앱처럼 설치할 수 있어요.";
     }
   }
 
@@ -1138,7 +1138,9 @@
     el.a2hsSteps.innerHTML = a2hsStepsHtml();
     el.a2hsLead.textContent = isIOS()
       ? "공유 버튼에서 두 번만 누르면 홈 화면에 아이콘이 생겨요."
-      : "브라우저 메뉴에서 두 번만 누르면 홈 화면에 아이콘이 생겨요.";
+      : isAndroid()
+        ? "브라우저 메뉴에서 두 번만 누르면 홈 화면에 아이콘이 생겨요."
+        : "브라우저 메뉴에서 설치하면 앱처럼 열 수 있어요.";
     el.a2hsOverlay.classList.add("show");
     el.a2hsOverlay.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
